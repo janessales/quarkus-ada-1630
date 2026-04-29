@@ -1,113 +1,273 @@
-# Reclame Aqui API
+# 📢 Reclame Aqui API
 
-Esta é uma API de exemplo para gerenciar reclamações, construída com Quarkus.
+API REST desenvolvida com Java + Quarkus para gerenciamento de reclamações de consumidores, inspirada no modelo do Reclame Aqui.
 
-## Banco de Dados
+O sistema permite cadastrar, listar, buscar, atualizar e remover reclamações, além de contar com geração automática de títulos utilizando integração com um client externo.
 
-Para executar o banco de dados MySQL em um contêiner Docker, use o seguinte comando:
+---
 
-```shell
-docker run --name mysql-container \
-  -p 3306:3306 \
-  -e MYSQL_ROOT_PASSWORD=root \
-  -e MYSQL_DATABASE=reclameaqui \
-  -d mysql:latest
+# 🚀 Tecnologias Utilizadas
+
+* Java
+* Quarkus
+* Hibernate ORM com Panache
+* RESTEasy Reactive
+* PostgreSQL
+* Maven
+* JUnit 5
+* Mockito
+* Quarkus Test
+* PanacheMock
+* InjectMock
+
+---
+
+# 📂 Estrutura do Projeto
+
+O projeto foi organizado seguindo boas práticas de separação de responsabilidades:
+
+* `Resource` → camada de exposição da API REST
+* `Service` → regras de negócio
+* `Entity` → representação da entidade no banco
+* `Infrastructure Client` → integração com API externa para geração de títulos
+
+---
+
+# ⚙️ Funcionalidades
+
+## 📌 CRUD de Reclamações
+
+A aplicação permite:
+
+### ➕ Criar reclamação
+
+Cadastro de uma nova reclamação contendo:
+
+* título
+* descrição
+* empresa
+* localidade
+* demais informações necessárias
+
+Caso o título não seja informado, o sistema gera automaticamente um título utilizando integração com API externa.
+
+---
+
+### 📋 Listar reclamações
+
+Permite:
+
+* listar todas as reclamações
+* paginação dos resultados
+* filtro por título ou descrição
+
+---
+
+### 🔎 Buscar reclamação por ID
+
+Consulta uma reclamação específica através do ID.
+
+---
+
+### ✏️ Atualizar reclamação
+
+Permite alterar os dados de uma reclamação já cadastrada.
+
+---
+
+### 🗑 Remover reclamação
+
+Exclusão de uma reclamação pelo ID.
+
+---
+
+# 🔗 Integração Externa
+
+## TitleGeneratorClient
+
+Quando uma reclamação é criada sem título, a aplicação realiza uma chamada para um client externo responsável por gerar automaticamente um título.
+
+Essa integração foi implementada utilizando:
+
+* MicroProfile Rest Client
+* `@RestClient`
+* `@InjectMock` nos testes
+
+Isso simula um cenário real de mercado com consumo de APIs externas.
+
+---
+
+# 🧪 Testes Automatizados
+
+O projeto possui testes automatizados para a camada de serviço (`ReclamacaoService`), garantindo o correto funcionamento das principais regras de negócio da aplicação.
+
+Os testes foram desenvolvidos utilizando:
+
+* JUnit 5
+* Mockito
+* Quarkus Test
+* PanacheMock
+* InjectMock
+
+---
+
+# 📌 Classe de Teste
+
+```java
+ReclamacaoServiceTest
 ```
 
-## Executando a Aplicação
+Essa classe valida os principais comportamentos dos métodos CRUD e também a integração com o `TitleGeneratorClient`.
 
-Para limpar o projeto e iniciar a aplicação em modo de desenvolvimento, execute o seguinte comando na raiz do projeto (`aula5_part2/reclame-aqui`):
+---
 
-```shell
-./mvnw clean quarkus:dev
+# ✅ Cenários Testados
+
+---
+
+## 🔍 listar()
+
+Valida o comportamento da listagem de reclamações com e sem filtros.
+
+### Casos cobertos:
+
+* retorna todas as reclamações quando o filtro é `null`
+* retorna todas as reclamações quando o filtro é vazio (`""`)
+* filtra corretamente por título ou descrição quando o filtro é informado
+* retorna lista vazia quando não há resultados
+
+---
+
+## 🔎 buscar()
+
+Valida a busca de uma reclamação por ID.
+
+### Casos cobertos:
+
+* retorna a reclamação quando o ID existe
+* retorna `null` quando o ID não existe
+
+---
+
+## ➕ criar()
+
+Valida a criação de uma nova reclamação e a geração automática de título.
+
+### Casos cobertos:
+
+* persiste normalmente quando o título já está preenchido
+* gera título automaticamente quando o título é `null`
+* gera título automaticamente quando o título está em branco
+* persiste sem título quando o client retorna lista vazia
+* persiste sem título quando o client retorna `null`
+
+### Integração validada:
+
+```java
+TitleGeneratorClient
 ```
 
-A aplicação estará disponível em `http://localhost:8080`.
+Foi utilizado `@InjectMock` para mockar o client externo e validar o comportamento sem depender da API real.
 
-## Endpoints da API
+---
 
-A API expõe os seguintes endpoints para gerenciar reclamações:
+## ✏️ atualizar()
 
-### 1. Listar Reclamações
+Valida a atualização de uma reclamação existente.
 
--   **Método:** `GET`
--   **Path:** `/reclamacoes`
--   **Descrição:** Retorna uma lista de reclamações. Suporta filtragem por texto e paginação.
--   **Parâmetros de Query:**
-    -   `filtro` (opcional, `String`): Filtra reclamações cujo título ou descrição contenham o texto fornecido (case-insensitive).
-    -   `pagina` (opcional, `int`, default: `0`): O número da página para a paginação.
-    -   `tamanhoPagina` (opcional, `int`, default: `10`): O número de itens por página.
--   **Exemplo:** `GET /reclamacoes?filtro=bacon&pagina=0&tamanhoPagina=5`
--   **Resposta de Sucesso:** `200 OK`
-    ```json
-    [
-        {
-            "id": 1,
-            "titulo": "Bacon ipsum dolor amet...",
-            "descricao": "Bacon ipsum dolor amet leberkas sirloin tongue corned beef capicola.",
-            "autor": "Marcel"
-        }
-    ]
-    ```
+### Casos cobertos:
 
-### 2. Buscar Reclamação por ID
+* atualiza corretamente todos os campos quando o ID existe
+* retorna `null` quando a reclamação não é encontrada
 
--   **Método:** `GET`
--   **Path:** `/reclamacoes/{id}`
--   **Descrição:** Retorna uma reclamação específica pelo seu ID.
--   **Exemplo:** `GET /reclamacoes/1`
--   **Resposta de Sucesso:** `200 OK`
-    ```json
-    {
-        "id": 1,
-        "titulo": "Bacon ipsum dolor amet...",
-        "descricao": "Bacon ipsum dolor amet leberkas sirloin tongue corned beef capicola.",
-        "autor": "Marcel"
-    }
-    ```
--   **Resposta de Erro:** `404 Not Found` se a reclamação não for encontrada.
+---
 
-### 3. Criar uma Nova Reclamação
+## 🗑 deletar()
 
--   **Método:** `POST`
--   **Path:** `/reclamacoes`
--   **Descrição:** Cria uma nova reclamação. Se o campo `titulo` não for fornecido ou estiver em branco, um título será gerado automaticamente através da API externa [baconipsum.com](https://baconipsum.com/).
--   **Corpo da Requisição (JSON):**
-    ```json
-    {
-        "descricao": "Meu produto veio com defeito e o atendimento foi péssimo.",
-        "autor": "Cliente Insatisfeito"
-    }
-    ```
--   **Resposta de Sucesso:** `201 Created`
-    ```json
-    {
-        "id": 2,
-        "titulo": "Bacon ipsum dolor amet leberkas sirloin tongue corned beef capicola.",
-        "descricao": "Meu produto veio com defeito e o atendimento foi péssimo.",
-        "autor": "Cliente Insatisfeito"
-    }
-    ```
+Valida a exclusão de reclamações.
 
-### 4. Atualizar uma Reclamação
+### Casos cobertos:
 
--   **Método:** `PUT`
--   **Path:** `/reclamacoes/{id}`
--   **Descrição:** Atualiza uma reclamação existente.
--   **Corpo da Requisição (JSON):**
-    ```json
-    {
-        "titulo": "Título Atualizado",
-        "descricao": "Descrição atualizada.",
-        "autor": "Autor Atualizado"
-    }
-    ```
--   **Resposta de Sucesso:** `200 OK`
--   **Resposta de Erro:** `404 Not Found` se a reclamação não for encontrada.
+* chama `deleteById()` com o ID correto
+* não lança erro mesmo quando o ID não existe
 
-### 5. Deletar uma Reclamação
+---
 
--   **Método:** `DELETE`
--   **Path:** `/reclamacoes/{id}`
--   **Descrição:** Deleta uma reclamação pelo seu ID.
--   **Resposta de Sucesso:** `204 No Content`
+# ▶️ Como Executar o Projeto
+
+## Rodar a aplicação
+
+```bash
+./mvnw quarkus:dev
+```
+
+No Windows:
+
+```bash
+mvn quarkus:dev
+```
+
+A aplicação ficará disponível em:
+
+```bash
+http://localhost:8080
+```
+
+---
+
+# ▶️ Como Executar os Testes
+
+Para rodar todos os testes:
+
+```bash
+./mvnw test
+```
+
+No Windows:
+
+```bash
+mvn test
+```
+
+---
+
+# 🎯 Objetivo dos Testes
+
+Esses testes garantem:
+
+* segurança para futuras alterações
+* prevenção de regressões
+* validação das regras de negócio
+* maior confiabilidade da aplicação
+* cobertura da lógica de CRUD e integração externa
+
+Isso torna o projeto mais robusto e mais próximo de um cenário real de mercado.
+
+---
+
+# 💡 Diferenciais do Projeto
+
+Este projeto demonstra:
+
+* boas práticas com Quarkus
+* uso de Panache ORM
+* testes unitários robustos
+* integração com API externa
+* mock de dependências externas
+* cobertura de cenários reais de negócio
+* estrutura profissional para portfólio GitHub
+
+---
+
+# 👨‍💻 Projeto para Portfólio
+
+Este projeto foi desenvolvido com foco em aprendizado prático e fortalecimento de portfólio para oportunidades na área de desenvolvimento Java Backend.
+
+Ele demonstra conhecimentos importantes exigidos pelo mercado como:
+
+* Java moderno
+* APIs REST
+* testes automatizados
+* integração entre serviços
+* persistência com banco de dados
+* organização de código em camadas
